@@ -3,8 +3,8 @@ import PyQt5
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-import rgr
-from rgr import *
+import Utils
+from Utils import *
 
 SCREEN_WIDTH = 900
 SCREEN_HEIGH = 600
@@ -21,14 +21,9 @@ NORM = 32
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        triangle1 = Triangle(Point(1, 2), Point(4, 5), Point(2, 7))
-        triangle2 = Triangle(Point(8, 3), Point(6, 9), Point(10, 7))
-        self.obstacles = [triangle1, triangle2]
-        self.start_point = Point(0.75, 0.75)
-        self.end_point = Point(13, 11)
-        # self.obstacles = []
-        # self.start_point = Point(0, 0)
-        # self.end_point = Point(0, 0)
+        self.obstacles = []
+        self.start_point = Point(0, 0)
+        self.end_point = Point(0, 0)
         self.grid = []
         self.graph = Graph()
         self.flag = False
@@ -203,7 +198,7 @@ class Window(QMainWindow):
         return [int(item) for item in self.input_obsctale_coords.text().split(",")]
 
     def get_sq_size(self):
-        rgr.MIN_SQUARE_SIZE = float(self.gen_sq_size.text())
+        Utils.MIN_SQUARE_SIZE = float(self.gen_sq_size.text())
 
     def add_obstacle(self):
         coords = self.get_obsctale_coords()
@@ -296,7 +291,7 @@ class Window(QMainWindow):
         self.shortest_path = dijkstra(self.graph, start_index, end_index)
         self.total_weight = total_distance(self.shortest_path, self.graph)
 
-        if self.total_weight == -1:
+        if self.total_weight == 0:
             self.result_label.setText("  Unable to find the path")
         else:
             self.result_label.setText(f"  Result: {str(self.total_weight)}")
@@ -360,26 +355,30 @@ class Window(QMainWindow):
                             int(self.graph.points[value].y * NORM) + CANVAS_SIZE,
                         )
                         painter.drawLine(line_start, line_end)
+            if self.total_weight != 0:
+                line_start = QPoint(
+                    int(self.start_point.x * NORM) + CANVAS_SIZE,
+                    int(self.start_point.y * NORM) + CANVAS_SIZE,
+                )
+                line_end = QPoint(
+                    int(self.graph.points[self.shortest_path[0]].x * NORM)
+                    + CANVAS_SIZE,
+                    int(self.graph.points[self.shortest_path[0]].y * NORM)
+                    + CANVAS_SIZE,
+                )
+                painter.drawLine(line_start, line_end)
 
-            line_start = QPoint(
-                int(self.start_point.x * NORM) + CANVAS_SIZE,
-                int(self.start_point.y * NORM) + CANVAS_SIZE,
-            )
-            line_end = QPoint(
-                int(self.graph.points[self.shortest_path[0]].x * NORM) + CANVAS_SIZE,
-                int(self.graph.points[self.shortest_path[0]].y * NORM) + CANVAS_SIZE,
-            )
-            painter.drawLine(line_start, line_end)
-
-            line_start = QPoint(
-                int(self.end_point.x * NORM) + CANVAS_SIZE,
-                int(self.end_point.y * NORM) + CANVAS_SIZE,
-            )
-            line_end = QPoint(
-                int(self.graph.points[self.shortest_path[-1]].x * NORM) + CANVAS_SIZE,
-                int(self.graph.points[self.shortest_path[-1]].y * NORM) + CANVAS_SIZE,
-            )
-            painter.drawLine(line_start, line_end)
+                line_start = QPoint(
+                    int(self.end_point.x * NORM) + CANVAS_SIZE,
+                    int(self.end_point.y * NORM) + CANVAS_SIZE,
+                )
+                line_end = QPoint(
+                    int(self.graph.points[self.shortest_path[-1]].x * NORM)
+                    + CANVAS_SIZE,
+                    int(self.graph.points[self.shortest_path[-1]].y * NORM)
+                    + CANVAS_SIZE,
+                )
+                painter.drawLine(line_start, line_end)
 
             painter.setPen(QPen(Qt.NoPen))
             painter.setBrush(QBrush(Qt.green))
