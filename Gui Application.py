@@ -21,15 +21,22 @@ NORM = 32
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
+        triangle0 = Triangle(Point(16, 4), Point(8, 16), Point(0, 8))
+        triangle1 = Triangle(Point(1, 2), Point(4, 5), Point(2, 7))
+        triangle2 = Triangle(Point(8, 3), Point(6, 9), Point(10, 7))
+        # self.start_point = Point(0.75, 0.75)
+        # self.end_point = Point(10, 10)
         self.obstacles = []
+        # self.obstacles = []
         self.start_point = Point(0, 0)
         self.end_point = Point(0, 0)
         self.grid = []
         self.graph = Graph()
         self.flag = False
         self.result = []
-        self.total_weight = -1
+        self.total_weight = 0
         self.flag_obst = False
+        self.shortest_path = []
 
         self.setStyleSheet(f"background-color: {DARK_BLUE_COLOR};" "")
 
@@ -218,8 +225,11 @@ class Window(QMainWindow):
             "Text Files(*.txt);;JPEG Files(*.jpeg);;\
                                                          PNG Files(*.png);;GIF File(*.gif);;All Files(*)",
         )
-        with open(f"{filename}", "r") as F:
-            lines = F.readlines()
+        try:
+            with open(filename, "r") as f:
+                lines = f.readlines()
+        except:
+            return
         temp = []
         temp = list(map(float, lines[0].replace("\n", "").split(",")))
         self.start_point.x = temp[0]
@@ -248,13 +258,16 @@ class Window(QMainWindow):
             "Text Files(*.txt);;JPEG Files(*.jpeg);;\
                                                          PNG Files(*.png);;GIF File(*.gif);;All Files(*)",
         )
-        with open(f"{filename}", "w") as F:
-            F.write(f"{self.start_point.x},{self.start_point.y}\n")
-            F.write(f"{self.end_point.x},{self.end_point.y}\n")
-            for item in self.obstacles:
-                F.write(
-                    f"{item.point1.x},{item.point1.y},{item.point2.x},{item.point2.y},{item.point3.x},{item.point3.y}\n"
-                )
+        try:
+            with open(f"{filename}", "w") as F:
+                F.write(f"{self.start_point.x},{self.start_point.y}\n")
+                F.write(f"{self.end_point.x},{self.end_point.y}\n")
+                for item in self.obstacles:
+                    F.write(
+                        f"{item.point1.x},{item.point1.y},{item.point2.x},{item.point2.y},{item.point3.x},{item.point3.y}\n"
+                    )
+        except:
+            return
 
     def stop(self):
         exit(0)
@@ -272,30 +285,46 @@ class Window(QMainWindow):
         self.update()
 
     def start(self):
-        self.grid = [Rectangle(Point(0, 0), side_length=16)]
-        self.grid = create_grid(self.obstacles, self.grid)
-        self.grid = sorted(self.grid, key=sorting_key)
+        flag = True
+        if len(self.obstacles) == 0:
+            flag = False
+            self.total_weight = distance(self.start_point, self.end_point)
+        else:
+            for obst in self.obstacles:
+                if is_point_inside_triangle(
+                    self.start_point, obst.point1, obst.point2, obst.point3
+                ) or is_point_inside_triangle(
+                    self.end_point, obst.point1, obst.point2, obst.point3
+                ):
+                    flag = False
+                    break
+        if flag:
+            self.grid = [Rectangle(Point(0, 0), side_length=16)]
+            self.grid = create_grid(self.obstacles, self.grid)
+            self.grid = sorted(self.grid, key=sorting_key)
 
-        mark_up_grid_n_graph(self.grid, self.graph, self.start_point, self.end_point)
+            mark_up_grid_n_graph(
+                self.grid, self.graph, self.start_point, self.end_point
+            )
 
-        start_index = None
-        end_index = None
+            start_index = None
+            end_index = None
 
-        for index, point in self.graph.points.items():
-            if point.color == "red":
-                start_index = index
-            elif point.color == "orange":
-                end_index = index
+            for index, point in self.graph.points.items():
+                if point.color == "red":
+                    start_index = index
+                elif point.color == "orange":
+                    end_index = index
 
-        connect_neighbor_squares(self.graph, self.grid)
-        self.shortest_path = dijkstra(self.graph, start_index, end_index)
-        self.total_weight = total_distance(self.shortest_path, self.graph)
+            connect_neighbor_squares(self.graph, self.grid)
+            self.shortest_path = dijkstra(self.graph, start_index, end_index)
+            self.total_weight = total_distance(self.shortest_path, self.graph)
 
         if self.total_weight == 0:
             self.result_label.setText("  Unable to find the path")
         else:
             self.result_label.setText(f"  Result: {str(self.total_weight)}")
-        self.flag = True
+            self.flag = True
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -341,45 +370,55 @@ class Window(QMainWindow):
 
             painter.setBrush(QBrush(Qt.white))
             painter.setPen(QPen(Qt.red, 2))
-            for i in range(len(self.shortest_path) - 1):
-                key = self.shortest_path[i]
-                value = self.shortest_path[i + 1]
-                if key in self.graph.points:
-                    if value in self.graph.points:
-                        line_start = QPoint(
-                            int(self.graph.points[key].x * NORM) + CANVAS_SIZE,
-                            int(self.graph.points[key].y * NORM) + CANVAS_SIZE,
-                        )
-                        line_end = QPoint(
-                            int(self.graph.points[value].x * NORM) + CANVAS_SIZE,
-                            int(self.graph.points[value].y * NORM) + CANVAS_SIZE,
-                        )
-                        painter.drawLine(line_start, line_end)
-            if self.total_weight != 0:
+            if len(self.shortest_path) != 0:
+                for i in range(len(self.shortest_path) - 1):
+                    key = self.shortest_path[i]
+                    value = self.shortest_path[i + 1]
+                    if key in self.graph.points:
+                        if value in self.graph.points:
+                            line_start = QPoint(
+                                int(self.graph.points[key].x * NORM) + CANVAS_SIZE,
+                                int(self.graph.points[key].y * NORM) + CANVAS_SIZE,
+                            )
+                            line_end = QPoint(
+                                int(self.graph.points[value].x * NORM) + CANVAS_SIZE,
+                                int(self.graph.points[value].y * NORM) + CANVAS_SIZE,
+                            )
+                            painter.drawLine(line_start, line_end)
+                if self.total_weight != 0:
+                    line_start = QPoint(
+                        int(self.start_point.x * NORM) + CANVAS_SIZE,
+                        int(self.start_point.y * NORM) + CANVAS_SIZE,
+                    )
+                    line_end = QPoint(
+                        int(self.graph.points[self.shortest_path[0]].x * NORM)
+                        + CANVAS_SIZE,
+                        int(self.graph.points[self.shortest_path[0]].y * NORM)
+                        + CANVAS_SIZE,
+                    )
+                    painter.drawLine(line_start, line_end)
+
+                    line_start = QPoint(
+                        int(self.end_point.x * NORM) + CANVAS_SIZE,
+                        int(self.end_point.y * NORM) + CANVAS_SIZE,
+                    )
+                    line_end = QPoint(
+                        int(self.graph.points[self.shortest_path[-1]].x * NORM)
+                        + CANVAS_SIZE,
+                        int(self.graph.points[self.shortest_path[-1]].y * NORM)
+                        + CANVAS_SIZE,
+                    )
+                    painter.drawLine(line_start, line_end)
+            else:
                 line_start = QPoint(
                     int(self.start_point.x * NORM) + CANVAS_SIZE,
                     int(self.start_point.y * NORM) + CANVAS_SIZE,
                 )
                 line_end = QPoint(
-                    int(self.graph.points[self.shortest_path[0]].x * NORM)
-                    + CANVAS_SIZE,
-                    int(self.graph.points[self.shortest_path[0]].y * NORM)
-                    + CANVAS_SIZE,
-                )
-                painter.drawLine(line_start, line_end)
-
-                line_start = QPoint(
                     int(self.end_point.x * NORM) + CANVAS_SIZE,
                     int(self.end_point.y * NORM) + CANVAS_SIZE,
                 )
-                line_end = QPoint(
-                    int(self.graph.points[self.shortest_path[-1]].x * NORM)
-                    + CANVAS_SIZE,
-                    int(self.graph.points[self.shortest_path[-1]].y * NORM)
-                    + CANVAS_SIZE,
-                )
                 painter.drawLine(line_start, line_end)
-
             painter.setPen(QPen(Qt.NoPen))
             painter.setBrush(QBrush(Qt.green))
             painter.drawEllipse(

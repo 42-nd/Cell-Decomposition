@@ -42,6 +42,7 @@ class Line:
         self.color = color
         self.marker = marker
 
+
 class Triangle:
     def __init__(
         self,
@@ -372,3 +373,19 @@ def mark_up_grid_n_graph(grid, graph, point_start, point_end):
                         delta=grid[i].side_length / 2,
                     ),
                 )
+
+
+def is_point_inside_triangle(point, vertex1, vertex2, vertex3):
+    def sign(point1, point2, point3):
+        return (point1.x - point3.x) * (point2.y - point3.y) - (point2.x - point3.x) * (
+            point1.y - point3.y
+        )
+
+    d1 = sign(point, vertex1, vertex2)
+    d2 = sign(point, vertex2, vertex3)
+    d3 = sign(point, vertex3, vertex1)
+
+    has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+    has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+
+    return not (has_neg and has_pos)
