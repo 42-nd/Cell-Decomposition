@@ -90,7 +90,13 @@ def check_collision(shape1, shape2):
         num_points12 = int(np.abs(point2.x - point1.x) / step) + 1
         num_points23 = int(np.abs(point3.x - point2.x) / step) + 1
         num_points31 = int(np.abs(point1.x - point3.x) / step) + 1
-
+        print(num_points31,num_points23,num_points12)
+        if num_points12 <= 1:
+            num_points12 += 1
+        if num_points23 <= 1:
+            num_points23 += 1
+        if num_points31 <= 1:
+            num_points31 +=1
         delta_12x = (point2.x - point1.x) / (num_points12 - 1)
         delta_23x = (point3.x - point2.x) / (num_points23 - 1)
         delta_31x = (point1.x - point3.x) / (num_points31 - 1)

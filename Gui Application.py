@@ -21,13 +21,7 @@ NORM = 32
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        triangle0 = Triangle(Point(16, 4), Point(8, 16), Point(0, 8))
-        triangle1 = Triangle(Point(1, 2), Point(4, 5), Point(2, 7))
-        triangle2 = Triangle(Point(8, 3), Point(6, 9), Point(10, 7))
-        # self.start_point = Point(0.75, 0.75)
-        # self.end_point = Point(10, 10)
         self.obstacles = []
-        # self.obstacles = []
         self.start_point = Point(0, 0)
         self.end_point = Point(0, 0)
         self.grid = []
@@ -61,7 +55,7 @@ class Window(QMainWindow):
         self.exit_button.clicked.connect(self.stop)
 
         self.add_end_point = QPushButton(self)
-        self.add_end_point.setGeometry(QRect(550, 20, 180, 41))
+        self.add_end_point.setGeometry(QRect(550, 81, 180, 41))
         self.add_end_point.setStyleSheet(
             f"background-color: {LIGHT_BLUE_COLOR};\n"
             "font: 16pt Arial;\n"
@@ -72,7 +66,7 @@ class Window(QMainWindow):
         self.add_end_point.clicked.connect(self.get_end_point)
 
         self.add_start_point = QPushButton(self)
-        self.add_start_point.setGeometry(QRect(550, 81, 180, 41))
+        self.add_start_point.setGeometry(QRect(550, 20, 180, 41))
         self.add_start_point.setStyleSheet(
             f"background-color: {LIGHT_BLUE_COLOR};\n"
             "font: 16pt Arial;\n"
@@ -193,16 +187,16 @@ class Window(QMainWindow):
 
     def get_start_point(self):
         self.start_point.x, self.start_point.y = [
-            int(item) for item in self.input_start_coords.text().split(",")
+            float(item) for item in self.input_start_coords.text().split(",")
         ]
 
     def get_end_point(self):
         self.end_point.x, self.end_point.y = [
-            int(item) for item in self.input_end_coords.text().split(",")
+            float(item) for item in self.input_end_coords.text().split(",")
         ]
 
     def get_obsctale_coords(self):
-        return [int(item) for item in self.input_obsctale_coords.text().split(",")]
+        return [float(item) for item in self.input_obsctale_coords.text().split(",")]
 
     def get_sq_size(self):
         Utils.MIN_SQUARE_SIZE = float(self.gen_sq_size.text())
